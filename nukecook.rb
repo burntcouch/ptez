@@ -75,16 +75,67 @@ def findn(n)
 	return res
 end
 
-def react(n1, n2, dt)
-	prod = {n: n1[:n] + n2[:n], p: n1[:p] + n2[:p]}
-	f = findn(prod)
-	if f[:new].nil?  # a nucleus not in the NUKES list
+
+class Nuke
+	attr_accessor :nspec, :orgtime
 	
-	else
+	def initialize(n, p, t)
+		@nspec = findn({n: @n, p: @p})
+		@orgtime = t
+	end
+	
+	def n
+		self.nspec[:n]
+	end
+	
+	def p
+		self.nspec[:p]
+	end
+
+	def half
+		self.nspec[:half]
+	end
+	
+	def decay
+		self.nspec[:decay].nil? ? nil : self.nspec[:decay]
+	end
+end
+
+class NukeTank
+	attr_accessor :tank, :rate, :temp, :press
+	
+	def initialize(ncnt)
+	
 	
 	end
 	
+	def cook(steps, dt)
 	
+	
+	end
+	
+	def get_decayed
+	
+
+	end
+	
+	def react(n1, n2, dt)
+		res = nil
+		prod = {n: n1[:n] + n2[:n], p: n1[:p] + n2[:p]}
+		f = findn(prod)
+		if f[:new].nil?  # a nucleus in the NUKES list
+			if f[:half] 
+		
+		elsif f[:new]
+			res = f
+		end
+	
+	
+	end
+
 end
+
+
+
 
 
