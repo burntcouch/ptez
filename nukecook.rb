@@ -12,7 +12,7 @@ module NukeCooker
 		Sc: 21, Ti: 22, V: 23, Cr: 24, Mn: 25, Fe: 26, Co: 27, Ni: 28, Cu: 29, Zn: 30,
 		Ga: 31, Ge: 32, As: 33, Se: 34, Br: 35, Kr: 36, Rb: 37, Sr: 38, Y: 39, Zr: 40,
 		Nb: 41, Mo: 42, Tc: 43, Ru: 44, Rh: 45, Pd: 46, Ag: 47, Cd: 48, In: 49, Sn: 50,	
-		Sb: 51, Te: 52, I: 53, Kr: 54, Cs: 55, Ba: 56, La: 57, Ce: 58, Pr: 59, Nd: 60,
+		Sb: 51, Te: 52, I: 53, Xe: 54, Cs: 55, Ba: 56, La: 57, Ce: 58, Pr: 59, Nd: 60,
 		Pm: 61, Sm: 62, Eu: 63, Gd: 64, Tb: 65, Dy: 66, Ho: 67, Er: 68, Tm: 69, Yb: 70,
 		Lu: 71, Hf: 72, Ta: 73, W: 74, Re: 75, Os: 76, Ir: 77, Pt: 78, Au: 79, Hg: 80,
 		Tl: 81, Pb: 82, Bi: 83, Po: 84, At: 85, Rn: 86, Fr: 87, Ra: 88, Ac: 89, Th: 90,
@@ -20,11 +20,11 @@ module NukeCooker
 		Md: 101, No: 102, Lr: 103, Rf: 104, Db: 105, Sg: 106, Bh: 107, Hs: 108, Mt: 109, Ds: 110,
 		Rg: 111, Cn: 112, Nh: 113, Fl: 114, Mc: 115, Lv: 116, Ts: 117, Og: 118 
 	}
-	NUKES = { e: {n: 0, p: 0, be: 0.0, half: nil},
+	NUKES = { e: {n: 0, p: 0, be: 0.45, half: nil},
 		n: {n: 1, p: 0, be: 800.0, half: 881.5, decay: ['b-', 0.782, :H]}, 
 		H: {n: 0, p: 1, be: 782.327, half: nil},	
 		D: {n: 1, p: 1, be: 1503.327, half: nil}, 
-		T: {n: 2, p: 1, be: 2827.265, half: 3.88e12, decay: ['b-', 0.0186, :He3]}, 
+		T: {n: 2, p: 1, be: 2827.265, half: 3.88e8, decay: ['b-', 0.0186, :He3]}, 
 		He3: {n: 1, p: 2, be: 3094.327, half: nil},	
 		He4: {n: 2, p: 2, be: 7073.915, half: nil}, 
 		He5: {n: 3, p: 2, be: 5512.132, half: 8e-22, decay: ['n', 0.890, :He4]},
@@ -74,9 +74,9 @@ module NukeCooker
 		res = nil
 		if p == 1
 			res = case n
-				when 0 then NUKES[:H]
-				when 1 then NUKES[:D]
-				when 2 then NUKES[:T]
+				when 0 then :H
+				when 1 then :D
+				when 2 then :T
 				else ("H%i" % (1 + n)).intern
 			end
 		elsif p == 0 && n == 1
@@ -93,6 +93,20 @@ module NukeCooker
 		end
 		return res
 	end
+	
+	def bediff(nl1, nl2)
+#		puts nl1.map {|a| a.to_s}.join(',')
+#		puts nl2.map {|a| a.to_s}.join(',')
+		be1 = nl1.reject {|n| n == :DELE || n == :GAMMA}.inject(0.0) {|b, n| b += n.be; b}
+		be2 = nl2.reject {|n| n == :DELE || n == :GAMMA}.inject(0.0) {|b, n| b += n.be; b}
+		return be2 - be1
+	end
+	
+	def befrac(nl1, nl2)
+		be1 = nl1.reject {|n| n == :DELE || n == :GAMMA}.inject(0.0) {|b, n| b += n.be; b}
+		be2 = nl2.reject {|n| n == :DELE || n == :GAMMA}.inject(0.0) {|b, n| b += n.be; b}
+		return (be2 - be1) / be1
+	end
 
 	class Nuke
 		attr_accessor :name, :nspec, :lasttime
@@ -107,6 +121,10 @@ module NukeCooker
 				@nspec = NUKES[spec]
 			end
 			@lasttime = t
+		end
+		
+		def to_s
+			"#{self.name} P#{self.p} N#{self.n} HALF#{self.half}"
 		end
 		
 		def upd(newt)
@@ -142,6 +160,8 @@ module NukeCooker
 				end
 				# res = [Nuke.new(r[2], self.lasttime)]
 					# make list of resulting stuff
+	#			puts self.to_s
+	#			puts r.map {|a| a.to_s}.join(',')
 				case r[0]
 					when 'b-'
 						res << Nuke.new(:e, self.lasttime)
@@ -171,7 +191,7 @@ module NukeCooker
 						res << Nuke.new(:n, self.lasttime)
 						res << Nuke.new(nil, self.lasttime, self.n - 1, self.p)
 					when 'p'
-						res << Nuke.new(:p, self.lasttime)
+						res << Nuke.new(:H, self.lasttime)
 						res << Nuke.new(nil, self.lasttime, self.n, self.p - 1)
 				end
 			end
@@ -184,6 +204,10 @@ module NukeCooker
 	
 		def is_new?
 			!self.nspec[:new].nil?
+		end
+		
+		def be
+			self.name == :e ? self.nspec[:be] : (self.nspec[:be] * (self.n + self.p))
 		end
 	
 		def n
@@ -204,30 +228,92 @@ module NukeCooker
 	end
 
 	class NukeTank
-		attr_accessor :tank, :rate, :temp, :press
+		attr_accessor :tank, :stopt
 	
 		def initialize(ncnt)
-			@tank = filltank(ncnt)
-	
+			@stopt = 0.0
+			filltank(ncnt)
+		end
+		
+		def mass
+
 		end
 	
-		def filltank(num)
+		def charge
+			res = 0
+			self.tank.each do |n|
+				res += (n.name == :e ? -1 : n.p)
+			end
+			return res
+		end
+		
+		def zerocharge(delep = 0)
+			c = (delep != 0 ? -delep : self.charge)
+			if c > 0
+				1.upto(c) {|ni| self.tank << Nuke.new(:e)}
+			elsif c < 0
+				els = 0.upto(self.tank.size-1).inject([]) {|a, ex| a << ex if self.tank[ex].name == :e; a}
+				1.upto(-c) {|ci| self.tank.delete_at(els[ci]) } 
+			end		
+		end
 	
+		def filltank(num, opt=:MIX)
+			self.tank = []
+			if opt == :MIX
+				1.upto(num) do |ni|
+					npick = NUKES.keys.sample
+					self.addnuke(Nuke.new(npick))
+				end
+				self.zerocharge
+			else
+				
+			end
+			return self
+		end
+		
+		def addnuke(n)
+			n.lasttime = self.stopt
+			self.tank << n
 		end
 	
 		def upd(dt)
 			self.get_decayed(dt)
 	
+			self.stopt += dt
 		end
 	
 		def cook(steps, dt)
-	
-	
+			dtt = dt / steps
+			0.upto(steps - 1) do |s|
+				x = get_decayed(self.stopt + dtt * s)
+			end
+			
+			self.stopt += dt
 		end
 	
-		def get_decayed(dt)
-	
-
+		def get_decayed(newt)
+			radn = 0.upto(self.tank.size-1).inject([]) {|a, ex| a << ex unless self.tank[ex].half.nil?; a}
+			pickx = radn[rand(radn.size)]
+			decd = self.tank[pickx]
+			if decd.breakdown?(newt)
+				decayres = decd.decay_to
+				netbe = bediff([decd], decayres)
+					 # but don't have anything to do with the excess E yet...
+					 
+				self.tank.delete_at(pickx)
+				decayres.each do |n|
+					if n == :DELE
+						self.zerocharge(1)
+					elsif n == :GAMMA
+						# do something with gammas
+					else
+						self.addnuke(n)
+					end
+				end
+			else
+				decd = nil
+			end
+			return decd
 		end
 	
 
