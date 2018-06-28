@@ -65,12 +65,94 @@ module NukeCooker
 		Ne22: {n: 12, p: 10, be: 8080.465, half: nil}, 
 		Ne23: {n: 13, p: 10, be: 7955.256, half: 37.24, decay: ['b-', 4.375, :Na23]},
 		Na23: {n: 12, p: 11, be: 8111.493, half: nil},
-		Sc46: {n: 25, p: 21, be: 8622.012, half: 7.238e6, decay: ['SF', 0.0, :Ne23, nil, :Na23] }
+		Sc46: {n: 25, p: 21, be: 8622.012, half: 7.238e6, decay: ['sf', 0.0, :Ne23, nil, :Na23] }
 	}
+	
+	SFSPEC = [:C12, :C14, :O16, :O18, :Ne20, :Ne22, :Ne24, :Mg24, :Mg26, :Si28, :Si32, :Si34, :S32, :S34, :S36,
+		:Ar36, :Ar38, :Ar40, :Ar42, :Ca40, :Ca44, :Ca48, :Ti48, :Ti50, :Cr52, :Cr54, :Fe56, :Fe60, :Ni62, :Ni64,
+		:Sn120, :Sn122, :Sn126, :Xe132, :Xe134, :Xe136, :Ba140, :Ba136, :Ba138, :Te130, :Sr90, :Kr86, :Se82, :Ge76,
+		:Zn70, :Zn72, :Zr96, :Mo100, :Ru104, :Ru106, :Pd110, :Cd116, :Ce144, :Nd150]
 
-	INIT = {H: 0.8, D: 0.02, He3: 0.001, He4: 0.149, Li6: 0.004, Li7: 0.025, Be9: 0.001}
+	NUKEINIT = {H: 0.8, D: 0.02, He3: 0.001, He4: 0.149, Li6: 0.004, Li7: 0.025, Be9: 0.001}
 
-	def findn(n, p)
+	def load_nukes(fn)
+		nukes = { 
+			e: {n: 0, p: 0, be: 0.45, half: nil},
+			n: {n: 1, p: 0, be: 800.0, half: 881.5, decay: ['b-', 0.782, :H]}, 
+			H: {n: 0, p: 1, be: 782.327, half: nil},	
+			D: {n: 1, p: 1, be: 1503.327, half: nil}, 
+			T: {n: 2, p: 1, be: 2827.265, half: 3.88e8, decay: ['b-', 0.0186, :He3]}
+		}
+		
+		if !fn.nil? && File.file?(fn)
+			tok = false
+			File.open(fn).each do |fline|
+				# Z,N,symb, half_life [s], decay, decay %, decay, decay %, decay, decay %,Binding/A
+				if tok
+					puts fline
+					z = fline.split(/\s*,\s*/)
+					symb = z[2][0].upcase
+					symb << z[2][1].downcase unless z[2].length == 1
+					zk = "#{symb}#{(z[0].to_i+z[1].to_i).to_s}".intern
+					half = (z[3] == "" ? nil : z[3].to_f)
+					if half.nil? && !z[4].empty?
+						half = 1e-99  # immediately decays!
+					end
+					nukes[zk] = {n: z[1].to_i, p: z[0].to_i, half: half, be: z[10].to_f}
+					if half
+						nukes[zk][:decay] = []
+						dx = 4
+						loop do
+							a = [z[dx].downcase, 0.0, ""]
+							a << (z[dx+1].empty? ? 1.0 : z[dx+1].to_f/100.0)
+							nukes[zk][:decay] << a
+							if z[dx+2].empty? || z[dx+1].empty? || dx+2 == 10
+								break
+							else
+								dx += 2
+							end
+						end
+						nukes[zk][:decay].flatten! if nukes[zk][:decay].size == 1
+					end
+				end
+				tok = true
+			end
+			##
+			## postprocess to fix which decay seq to keep
+			##
+			nukes.keys.each do |nk|
+				unless nukes[nk][:half].nil?
+					decs = nukes[nk][:decay]
+					if decs[0].is_a?(Array) && decs.size > 1
+						if decs[1][3] == 1.0
+							decs[0] = decs[1]
+							decs.delete_at(1)
+						end
+					end
+					if decs[0].is_a?(Array) && decs.size > 1
+						if decs[0][3] == 1.0
+							dv = decs[1][3] + (decs[2].nil? ? 0.0 : decs[2][3])
+							decs[0][3] = 1.0 - dv
+						end
+					end
+					decs.flatten! if decs[0].is_a?(Array) && decs.size == 1
+				end
+			end
+			
+		else
+			nukes = NUKES
+		end
+		return nukes
+	end
+	
+	def wpick(whash) # weighted pick : whash has {thing => weight}
+		totw = whash.values.inject(0.0) {|t,w| t += w}
+		pickw = rand * totw
+		ptot = 0.0
+		return whash.keys.select {|k| ptot += whash[k]; ptot > pickw}.first
+	end
+
+	def findn(nukelist, n, p)
 		res = nil
 		if p == 1
 			res = case n
@@ -79,15 +161,18 @@ module NukeCooker
 				when 2 then :T
 				else ("H%i" % (1 + n)).intern
 			end
-		elsif p == 0 && n == 1
-			res = :n
+		elsif p == 0
+			res = case n
+				when 1 then :n
+				when 0 then :e
+			end
 		else
 			plookup = PROTONS.keys.sort {|a,b| PROTONS[a] <=> PROTONS[b]}
 			amu = p + n
 			res = "#{plookup[p - 1] .to_s}#{amu.to_s}".intern
 		end
-		unless NUKES[res].nil?
-			res = {res => NUKES[res]}
+		unless nukelist[res].nil?
+			res = {res => nukelist[res]}
 		else
 			res = {res => {new: true, n: n, p: p}}
 		end
@@ -107,24 +192,41 @@ module NukeCooker
 		be2 = nl2.reject {|n| n == :DELE || n == :GAMMA}.inject(0.0) {|b, n| b += n.be; b}
 		return (be2 - be1) / be1
 	end
+	
+	class NukeEnv
+		attr_accessor :nukes
+		
+		def initialize(nukefile)
+			@nukes = load_nukes(nukefile)
+		end
+	
+	end
 
 	class Nuke
 		attr_accessor :name, :nspec, :lasttime
+		attr_reader :env
 	
-		def initialize(spec = nil, t = 0.0,  n = nil, p = nil)
-			if spec.nil? || NUKES[spec].nil?
-				f = findn(n, p)
+		def initialize(env, spec = nil, t = 0.0,  n = nil, p = nil)
+			@env = env
+			nukelist = @env.nukes
+			if spec.nil? || nukelist[spec].nil?
+				f = findn(nukelist, n, p)
 				@name = f.keys[0]
 				@nspec = f.values[0]
-			elsif NUKES[spec]
+			elsif nukelist[spec]
 				@name = spec
-				@nspec = NUKES[spec]
+				@nspec = nukelist[spec]
 			end
 			@lasttime = t
 		end
 		
 		def to_s
-			"#{self.name} P#{self.p} N#{self.n} HALF#{self.half}"
+			if self.half.nil?
+				hstr = ""
+			else
+				hstr = "HALF:#{"%5.2e" % self.half}"
+			end
+			"#{self.name} P#{self.p} N#{self.n} #{hstr} T:#{self.lasttime}"
 		end
 		
 		def upd(newt)
@@ -158,41 +260,126 @@ module NukeCooker
 				else
 					r = d
 				end
-				# res = [Nuke.new(r[2], self.lasttime)]
 					# make list of resulting stuff
-	#			puts self.to_s
-	#			puts r.map {|a| a.to_s}.join(',')
+		#		puts self.to_s
+		#		puts r.map {|a| a.to_s}.join(',')
 				case r[0]
 					when 'b-'
-						res << Nuke.new(:e, self.lasttime)
-						res << Nuke.new(nil, self.lasttime, self.n - 1, self.p + 1)
+						res << Nuke.new(@env, :e, self.lasttime)
+						res << Nuke.new(@env, nil, self.lasttime, self.n - 1, self.p + 1)
 					when 'ec'
 						res << :DELE
-						res << Nuke.new(nil, self.lasttime, self.n + 1, self.p - 1)
+						res << Nuke.new(@env, nil, self.lasttime, self.n + 1, self.p - 1)
 					when 'b+'
 						res << :DELE
 						res << :GAMMA
-						res << Nuke.new(nil, self.lasttime, self.n + 1, self.p - 1)
+						res << Nuke.new(@env, nil, self.lasttime, self.n + 1, self.p - 1)
 					when 'b-n'
-						res << Nuke.new(:n, self.lasttime)
+						res << Nuke.new(@env, :n, self.lasttime)
 						res << :DELE
-						res << Nuke.new(nil, self.lasttime, self.n - 2, self.p + 1)
+						res << Nuke.new(@env, nil, self.lasttime, self.n - 2, self.p + 1)
 					when 'a'
-						res << Nuke.new(:He4, self.lasttime)
-						res << Nuke.new(nil, self.lasttime, self.n - 2, self.p - 2)
+						res << Nuke.new(@env, :He4, self.lasttime)
+						res << Nuke.new(@env, nil, self.lasttime, self.n - 2, self.p - 2)
 					when 'b-a'
-						res << Nuke.new(:He4, self.lasttime)
+						res << Nuke.new(@env, :He4, self.lasttime)
 						res << :DELE
-						res << Nuke.new(nil, self.lasttime, self.n - 3, self.p - 1)
-					when 'SF'
-						res << Nuke.new(r[4], self.lasttime)
-						res << Nuke.new(nil, self.lasttime, self.n - res[-1].n, self.p - res[-1].p)
+						res << Nuke.new(@env, nil, self.lasttime, self.n - 3, self.p - 1)
+					when 'sf'
+						res << Nuke.new(@env, SFSPEC.sample, self.lasttime)
+						res << Nuke.new(@env, nil, self.lasttime, self.n - res[-1].n, self.p - res[-1].p)
 					when 'n'
-						res << Nuke.new(:n, self.lasttime)
-						res << Nuke.new(nil, self.lasttime, self.n - 1, self.p)
+						res << Nuke.new(@env, :n, self.lasttime)
+						res << Nuke.new(@env, nil, self.lasttime, self.n - 1, self.p)
 					when 'p'
-						res << Nuke.new(:H, self.lasttime)
-						res << Nuke.new(nil, self.lasttime, self.n, self.p - 1)
+						res << Nuke.new(@env, :H, self.lasttime)
+						res << Nuke.new(@env, nil, self.lasttime, self.n, self.p - 1)
+					when '2p'
+						res << Nuke.new(@env, :H, self.lasttime)
+						res << Nuke.new(@env, :H, self.lasttime)
+						res << Nuke.new(@env, nil, self.lasttime, self.n, self.p - 2)
+					when 'b-p'
+						res << Nuke.new(@env, :H, self.lasttime)
+						res << :DELE
+						res << Nuke.new(@env, nil, self.lasttime, self.n - 1, self.p)
+					when 'b-2p'
+						res << Nuke.new(@env, :H, self.lasttime)
+						res << Nuke.new(@env, :H, self.lasttime)
+						res << :DELE
+						res << Nuke.new(@env, nil, self.lasttime, self.n - 1, self.p - 1)					
+					when 'ec+b+'  # assuming is the same as 'ec'
+						res << :DELE
+						res << :GAMMA
+						res << Nuke.new(@env, nil, self.lasttime, self.n + 1, self.p - 1)
+					when 'b+p'
+						res << Nuke.new(@env, :H, self.lasttime)
+						res << :DELE
+						res << :GAMMA
+						res << Nuke.new(@env, nil, self.lasttime, self.n + 1, self.p)
+					when '2n'
+						res << Nuke.new(@env, :n, self.lasttime)
+						res << Nuke.new(@env, :n, self.lasttime)
+						res << Nuke.new(@env, nil, self.lasttime, self.n - 2, self.p)
+					when 'ecp'
+						res << Nuke.new(@env, :H, self.lasttime)
+						res << :DELE
+						res << Nuke.new(@env, nil, self.lasttime, self.n + 1, self.p - 2)
+					when 'eca'
+						res << Nuke.new(@env, :He4, self.lasttime)
+						res << :DELE
+						res << Nuke.new(@env, nil, self.lasttime, self.n - 1, self.p - 3)
+					when 'b+2p'
+						res << Nuke.new(@env, :H, self.lasttime)
+						res << Nuke.new(@env, :H, self.lasttime)
+						res << :DELE
+						res << :GAMMA
+						res << Nuke.new(@env, nil, self.lasttime, self.n + 1, self.p - 1)
+					when 'ec2p'
+						res << Nuke.new(@env, :H, self.lasttime)
+						res << Nuke.new(@env, :H, self.lasttime)
+						res << :DELE
+						res << Nuke.new(@env, nil, self.lasttime, self.n + 1, self.p - 3)
+					when '2b-'
+						res << Nuke.new(@env, :e, self.lasttime)
+						res << Nuke.new(@env, :e, self.lasttime)
+						res << Nuke.new(@env, nil, self.lasttime, self.n - 2, self.p + 2)
+					when '2b+'
+						res << :DELE; res << :DELE
+						res << :GAMMA; res << :GAMMA
+						res << Nuke.new(@env, nil, self.lasttime, self.n + 2, self.p - 2)					
+					when 'b-3n'
+						res << Nuke.new(@env, :n, self.lasttime)
+						res << Nuke.new(@env, :n, self.lasttime)
+						res << Nuke.new(@env, :n, self.lasttime)
+						res << :DELE
+						res << Nuke.new(@env, nil, self.lasttime, self.n - 4, self.p + 1)
+					when 'b-2n'
+						res << Nuke.new(@env, :n, self.lasttime)
+						res << Nuke.new(@env, :n, self.lasttime)
+						res << :DELE
+						res << Nuke.new(@env, nil, self.lasttime, self.n - 3, self.p + 1)
+					when '2ec'
+						res << :DELE; res << :DELE
+						res << Nuke.new(@env, nil, self.lasttime, self.n + 2, self.p - 2)
+					when 'ecsf'
+						res << :DELE
+						res << Nuke.new(@env, SFSPEC.sample, self.lasttime)
+						res << Nuke.new(@env, nil, self.lasttime, self.n - 1 - res[-1].n, self.p + 1 - res[-1].p)
+					when '14c'
+						res << Nuke.new(@env, :C14, self.lasttime)
+						res << Nuke.new(@env, nil, self.lasttime, self.n - 1 - res[-1].n, self.p + 1 - res[-1].p)
+					when '24ne'
+					  res << Nuke.new(@env, :Ne24, self.lasttime)
+						res << Nuke.new(@env, nil, self.lasttime, self.n - 1 - res[-1].n, self.p + 1 - res[-1].p)
+					when '22ne'
+						res << Nuke.new(@env, :Ne22, self.lasttime)
+						res << Nuke.new(@env, nil, self.lasttime, self.n - 1 - res[-1].n, self.p + 1 - res[-1].p)
+					when '28mg'
+						res << Nuke.new(@env, :Mg28, self.lasttime)
+						res << Nuke.new(@env, nil, self.lasttime, self.n - 1 - res[-1].n, self.p + 1 - res[-1].p)
+					when '34si'
+						res << Nuke.new(@env, :Si34, self.lasttime)
+						res << Nuke.new(@env, nil, self.lasttime, self.n - 1 - res[-1].n, self.p + 1 - res[-1].p)				
 				end
 			end
 			return res
@@ -228,11 +415,14 @@ module NukeCooker
 	end
 
 	class NukeTank
-		attr_accessor :tank, :stopt
+		attr_accessor :tank, :elec, :stopt
+		attr_reader :env
 	
-		def initialize(ncnt)
+		def initialize(env, ncnt, fill=:INIT)
+			@env = env
 			@stopt = 0.0
-			filltank(ncnt)
+			@elec = 0
+			filltank(ncnt, fill)
 		end
 		
 		def mass
@@ -240,40 +430,48 @@ module NukeCooker
 		end
 	
 		def charge
-			res = 0
+			res = self.elec
 			self.tank.each do |n|
-				res += (n.name == :e ? -1 : n.p)
+				res += n.p
 			end
 			return res
 		end
 		
 		def zerocharge(delep = 0)
 			c = (delep != 0 ? -delep : self.charge)
-			if c > 0
-				1.upto(c) {|ni| self.tank << Nuke.new(:e)}
-			elsif c < 0
-				els = 0.upto(self.tank.size-1).inject([]) {|a, ex| a << ex if self.tank[ex].name == :e; a}
-				1.upto(-c) {|ci| self.tank.delete_at(els[ci]) } 
-			end		
+			self.elec += c	
+		end
+		
+		def cleartank(t=0.0)
+			self.tank = []
+			self.elec = 0
+			self.stopt = t
 		end
 	
 		def filltank(num, opt=:MIX)
 			self.tank = []
 			if opt == :MIX
 				1.upto(num) do |ni|
-					npick = NUKES.keys.sample
-					self.addnuke(Nuke.new(npick))
+					npick = @env.nukes.keys.sample
+					self.addnuke(Nuke.new(@env, npick))
 				end
 				self.zerocharge
-			else
-				
+			elsif opt == :INIT
+				1.upto(num) do |ni|
+					self.addnuke(Nuke.new(@env, wpick(NUKEINIT)))
+				end
+				self.zerocharge
 			end
 			return self
 		end
 		
-		def addnuke(n)
-			n.lasttime = self.stopt
-			self.tank << n
+		def addnuke(n, no_t=false)
+			if n.name != :e
+				n.lasttime = self.stopt unless no_t
+				self.tank << n
+			else
+				self.elec += 1
+			end
 		end
 	
 		def upd(dt)
@@ -282,41 +480,86 @@ module NukeCooker
 			self.stopt += dt
 		end
 	
-		def cook(steps, dt)
+		def cook(steps, dt, flux=nil)
 			dtt = dt / steps
+			# check for decays
 			0.upto(steps - 1) do |s|
 				x = get_decayed(self.stopt + dtt * s)
+				
+			end
+			#
+			# do particle flux
+			unless flux.nil?
+				flux.keys.each do |fk|
+					flux[fk].times do |fi|
+						dtt = rand * dt
+						oldn = nil; nukep = nil;
+						loop do
+							nukep = rand(self.tank.size)
+							oldn = self.tank[nukep]
+							break if oldn.name != :n
+						end
+						newn = Nuke.new(@env, nil,  self.stopt + dtt, oldn.n + @env.nukes[fk][:n], oldn.p + @env.nukes[fk][:p])
+						self.tank.delete_at(nukep)
+						 # if halflife is less than 1e-30, break down
+						if !newn.half.nil? && newn.half < 1e-30
+							d = newn.decay_to
+							self.proc_decay(d, stopt + dtt)
+							self.delete_nuke(fk)
+						else
+							self.addnuke(newn, true)
+							self.delete_nuke(fk)
+						end
+					end
+				end
 			end
 			
 			self.stopt += dt
 		end
+		
+		def delete_nuke(type)
+			ntlist = 0.upto(self.tank.size - 1).inject([]) {|a, x| a << x if self.tank[x].name == type; a}
+			oldn = nil
+			if ntlist.size > 0
+				npickx = ntlist[rand(ntlist.size)]
+				oldn = self.tank[npickx]
+				self.tank.delete_at(npickx)
+			end
+			return oldn
+		end
+		
+		def proc_decay(dres, newt)
+			dres.each do |n|
+				if n == :DELE
+					self.zerocharge(1)
+				elsif n == :GAMMA
+					# do something with gammas
+				else
+					n.lasttime = newt
+					self.addnuke(n, true)
+				end
+			end	
+		end
 	
 		def get_decayed(newt)
+			decd = nil
 			radn = 0.upto(self.tank.size-1).inject([]) {|a, ex| a << ex unless self.tank[ex].half.nil?; a}
-			pickx = radn[rand(radn.size)]
-			decd = self.tank[pickx]
-			if decd.breakdown?(newt)
-				decayres = decd.decay_to
-				netbe = bediff([decd], decayres)
-					 # but don't have anything to do with the excess E yet...
-					 
-				self.tank.delete_at(pickx)
-				decayres.each do |n|
-					if n == :DELE
-						self.zerocharge(1)
-					elsif n == :GAMMA
-						# do something with gammas
-					else
-						self.addnuke(n)
-					end
+			if radn.size > 0
+				pickx = radn[rand(radn.size)]
+				decd = self.tank[pickx]
+				if decd.breakdown?(newt)
+					decayres = decd.decay_to
+					netbe = bediff([decd], decayres)
+						 # but don't have anything to do with the excess E yet...
+						 
+					self.tank.delete_at(pickx)
+					self.proc_decay(decayres, newt)
+				else
+					decd = nil
 				end
-			else
-				decd = nil
 			end
 			return decd
 		end
-	
-
 
 	end # class NukeTank
 
