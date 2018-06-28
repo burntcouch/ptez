@@ -25,6 +25,7 @@ module NukeCooker
 		H: {n: 0, p: 1, be: 782.327, half: nil},	
 		D: {n: 1, p: 1, be: 1503.327, half: nil}, 
 		T: {n: 2, p: 1, be: 2827.265, half: 3.88e8, decay: ['b-', 0.0186, :He3]}, 
+		He2: {n: 0, p: 2, be: 1400.000, half: 1e-99, decay: ['ec', 0.0, :D]},
 		He3: {n: 1, p: 2, be: 3094.327, half: nil},	
 		He4: {n: 2, p: 2, be: 7073.915, half: nil}, 
 		He5: {n: 3, p: 2, be: 5512.132, half: 8e-22, decay: ['n', 0.890, :He4]},
@@ -81,7 +82,8 @@ module NukeCooker
 			n: {n: 1, p: 0, be: 800.0, half: 881.5, decay: ['b-', 0.782, :H]}, 
 			H: {n: 0, p: 1, be: 782.327, half: nil},	
 			D: {n: 1, p: 1, be: 1503.327, half: nil}, 
-			T: {n: 2, p: 1, be: 2827.265, half: 3.88e8, decay: ['b-', 0.0186, :He3]}
+			T: {n: 2, p: 1, be: 2827.265, half: 3.88e8, decay: ['b-', 0.0186, :He3]},
+			He2: {n: 0, p: 2, be: 1400.000, half: 1e-99, decay: ['ec', 0.0, :D]}
 		}
 		
 		if !fn.nil? && File.file?(fn)
@@ -221,12 +223,8 @@ module NukeCooker
 		end
 		
 		def to_s
-			if self.half.nil?
-				hstr = ""
-			else
-				hstr = "HALF:#{"%5.2e" % self.half}"
-			end
-			"#{self.name} P#{self.p} N#{self.n} #{hstr} T:#{self.lasttime}"
+			self.half.nil? ? "" : sprintf("%5.2e", self.half)
+			"#{self.name} P#{self.p} N#{self.n} HALF: #{hstr} T:#{self.lasttime}"
 		end
 		
 		def upd(newt)
@@ -485,36 +483,41 @@ module NukeCooker
 			# check for decays
 			0.upto(steps - 1) do |s|
 				x = get_decayed(self.stopt + dtt * s)
-				
-			end
-			#
-			# do particle flux
-			unless flux.nil?
-				flux.keys.each do |fk|
-					flux[fk].times do |fi|
-						dtt = rand * dt
-						oldn = nil; nukep = nil;
-						loop do
-							nukep = rand(self.tank.size)
-							oldn = self.tank[nukep]
-							break if oldn.name != :n
-						end
-						newn = Nuke.new(@env, nil,  self.stopt + dtt, oldn.n + @env.nukes[fk][:n], oldn.p + @env.nukes[fk][:p])
-						self.tank.delete_at(nukep)
-						 # if halflife is less than 1e-30, break down
-						if !newn.half.nil? && newn.half < 1e-30
-							d = newn.decay_to
-							self.proc_decay(d, stopt + dtt)
-							self.delete_nuke(fk)
-						else
-							self.addnuke(newn, true)
-							self.delete_nuke(fk)
-						end
-					end
-				end
+				do_flux(flux, dt, steps, self.stopt + dtt * s) unless flux.nil?
+				do_fusion()
 			end
 			
 			self.stopt += dt
+		end
+		
+		def do_fusion
+		
+		end
+		
+		def do_flux(flux, dt, steps, newt)
+			fperc = {}
+			flux.each {|fk,fv| fperc[fk] = fv.to_f / steps}
+			fperc.keys.each do |fk|
+				if rand <= fperc[v] 
+					oldn = nil; nukep = nil;
+					loop do
+						nukep = rand(self.tank.size)
+						oldn = self.tank[nukep]
+						break if oldn.name != :n
+					end
+					newn = Nuke.new(@env, nil,  newt, oldn.n + @env.nukes[fk][:n], oldn.p + @env.nukes[fk][:p])
+					self.tank.delete_at(nukep)
+					 # if halflife is less than 1e-20, break down again
+					if !newn.half.nil? && newn.half < 1e-20
+						d = newn.decay_to
+						self.proc_decay(d, newt)
+						self.delete_nuke(fk)
+					else
+						self.addnuke(newn, true)
+						self.delete_nuke(fk)
+					end		
+				end
+			end
 		end
 		
 		def delete_nuke(type)
