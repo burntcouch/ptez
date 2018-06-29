@@ -77,7 +77,7 @@ module NukeCooker
 		:Sn120, :Sn122, :Sn126, :Xe132, :Xe134, :Xe136, :Ba140, :Ba136, :Ba138, :Te130, :Sr90, :Kr86, :Se82, :Ge76,
 		:Zn70, :Zn72, :Zr96, :Mo100, :Ru104, :Ru106, :Pd110, :Cd116, :Ce144, :Nd150]
 
-	NUKEINIT = {H: 0.8, D: 0.02, He3: 0.001, He4: 0.149, Li6: 0.004, Li7: 0.025, Be9: 0.001}
+	NUKEINIT = {H: 0.9, D: 0.01, He3: 0.001, He4: 0.088, Li6: 0.00004, Li7: 0.00095, Be9: 0.00001}
 
 	def load_nukes(fn)
 		nukes = { 
@@ -185,10 +185,22 @@ module NukeCooker
 	end
 	
 	def bediff(nl1, nl2)
-#		puts nl1.map {|a| a.to_s}.join(',')
-#		puts nl2.map {|a| a.to_s}.join(',')
-		be1 = nl1.reject {|n| n == :DELE || n == :GAMMA}.inject(0.0) {|b, n| b += n.be; b}
-		be2 = nl2.reject {|n| n == :DELE || n == :GAMMA}.inject(0.0) {|b, n| b += n.be; b}
+		be1 = nl1.reject {|n| n == :DELE || n == :GAMMA}.inject(0.0) do |b, n|
+			begin
+				b += n.be
+			rescue
+				puts "#{n.name}"
+			end 
+			b
+		end
+		be2 = nl2.reject {|n| n == :DELE || n == :GAMMA}.inject(0.0) do |b, n|
+			begin
+				b += n.be
+			rescue
+				puts "#{n.name}"
+			end 
+			b
+		end
 		return be2 - be1
 	end
 	
@@ -434,18 +446,22 @@ module NukeCooker
 		def temp
 			self.heat / (self.mass * 10000.0)
 		end
+		
+		def pcnt
+			self.tank.inject(0) {|i, n| i += n.p}
+		end
+		
+		def ncnt
+			self.tank.inject(0) {|i, n| i += n.n}
+		end
 	
 		def charge
-			res = self.elec
-			self.tank.each do |n|
-				res += n.p
-			end
-			return res
+			self.pcnt - self.elec
 		end
 		
 		def zerocharge(delep = 0)
 			c = (delep != 0 ? -delep : self.charge)
-			self.elec += c	
+			self.elec += c
 		end
 		
 		def cleartank(t=0.0)
@@ -507,7 +523,7 @@ module NukeCooker
 				break if nuke1 != nuke2
 			end
 			n1 = self.tank[nuke1]; n2 = self.tank[nuke2]
-			baserate = 1.0 / (n1.p * n2.p)
+			baserate = 1.0 / (n1.p * n1.p * n2.p * n2.p)  # coulomb force goes up as square of charge
 			baserete = baserate * frate / steps
 			newn = Nuke.new(@env, nil,  newt,n1.n + n2.n, n1.p + n2.p)
 			netbe = bediff([n1, n2], [newn])
@@ -518,10 +534,8 @@ module NukeCooker
 				if !newn.half.nil? && newn.half < 1e-20
 					d = newn.decay_to
 					self.proc_decay(d, newt)
-					self.delete_nuke(fk)
 				else
 					self.addnuke(newn, true)
-					self.delete_nuke(fk)
 				end
 			end
 		end

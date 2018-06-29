@@ -6,12 +6,12 @@ require './nukecook.rb'
 include NukeCooker
 
 e = NukeEnv.new('./data/nuclides.csv')
-t = NukeTank.new(e, 10000)
+t = NukeTank.new(e, 50000)
 
-dt = 10.0
-ts = 150
-flux = {n: 10}
-frate = 10.0
+dt = 360.0
+ts = 100
+flux = {n: 0.02}
+frate = 100.0
 
 fcnt = 0
 
@@ -32,8 +32,8 @@ loop do
 		print "\n"
 	end
 	puts "-------------------------------------------------------------"
-	puts "TOTAL TIME: #{t.stopt.round(6)} COUNT: #{t.tank.size}  ELECTRONS: #{t.elec}"
-	puts "MASS: #{t.mass}  TEMP:#{t.temp.round(3)}"
+	puts "TOTAL TIME: #{t.stopt.round(6)} COUNT: #{t.tank.size}  P/N/E: #{t.pcnt}/#{t.ncnt}/#{t.elec}"
+	puts "CHARGE: #{t.charge}  MASS: #{t.mass}  TEMP:#{t.temp.round(3)}"
 	puts "-------------------------------------------------------------"
 	if fcnt <= 0
 		dummy = gets.chomp
