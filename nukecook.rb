@@ -20,6 +20,9 @@ module NukeCooker
 		Md: 101, No: 102, Lr: 103, Rf: 104, Db: 105, Sg: 106, Bh: 107, Hs: 108, Mt: 109, Ds: 110,
 		Rg: 111, Cn: 112, Nh: 113, Fl: 114, Mc: 115, Lv: 116, Ts: 117, Og: 118 
 	}
+	#
+	# 'test' data ('nuclides.csv' has 3300 entries!)
+	#
 	NUKES = { e: {n: 0, p: 0, be: 0.45, half: nil},
 		n: {n: 1, p: 0, be: 800.0, half: 881.5, decay: ['b-', 0.782, :H]}, 
 		H: {n: 0, p: 1, be: 782.327, half: nil},	
@@ -91,7 +94,7 @@ module NukeCooker
 			File.open(fn).each do |fline|
 				# Z,N,symb, half_life [s], decay, decay %, decay, decay %, decay, decay %,Binding/A
 				if tok
-					puts fline
+				 #	puts fline
 					z = fline.split(/\s*,\s*/)
 					symb = z[2][0].upcase
 					symb << z[2][1].downcase unless z[2].length == 1
@@ -413,18 +416,23 @@ module NukeCooker
 	end
 
 	class NukeTank
-		attr_accessor :tank, :elec, :stopt
+		attr_accessor :tank, :elec, :stopt, :heat
 		attr_reader :env
 	
 		def initialize(env, ncnt, fill=:INIT)
 			@env = env
 			@stopt = 0.0
 			@elec = 0
+			@heat = 0.0
 			filltank(ncnt, fill)
 		end
 		
 		def mass
-
+			self.tank.inject(0) {|m, n|	m += (n.n + n.p)}
+		end
+		
+		def temp
+			self.heat / (self.mass * 10000.0)
 		end
 	
 		def charge
@@ -478,27 +486,51 @@ module NukeCooker
 			self.stopt += dt
 		end
 	
-		def cook(steps, dt, flux=nil)
+		def cook(steps, dt, flux=nil, frate=nil)
 			dtt = dt / steps
 			# check for decays
-			0.upto(steps - 1) do |s|
-				x = get_decayed(self.stopt + dtt * s)
-				do_flux(flux, dt, steps, self.stopt + dtt * s) unless flux.nil?
-				do_fusion()
+			0.upto(steps - 1) do |s|			
+				x = get_decayed(self.stopt + dtt * s)													  # decays
+				do_flux(flux, steps, self.stopt + dtt * s) unless flux.nil?     # particle fluxes (p and n)
+				do_fusion(frate, steps, self.stopt + dtt * s) unless frate.nil? # fusion. need to adjust frate w/temperature...
 			end
-			
+			self.zerocharge
 			self.stopt += dt
 		end
 		
-		def do_fusion
-		
+		def do_fusion(frate, steps, newt)
+			# pick2
+			nuke1 = rand(self.tank.size)
+			nuke2 = nil
+			loop do
+				nuke2 = rand(self.tank.size)
+				break if nuke1 != nuke2
+			end
+			n1 = self.tank[nuke1]; n2 = self.tank[nuke2]
+			baserate = 1.0 / (n1.p * n2.p)
+			baserete = baserate * frate / steps
+			newn = Nuke.new(@env, nil,  newt,n1.n + n2.n, n1.p + n2.p)
+			netbe = bediff([n1, n2], [newn])
+			if rand < baserate && netbe > 0.0
+				self.heat += (netbe * 1000.0)
+				self.tank.delete_at(nuke1)
+				self.tank.delete_at(nuke2)
+				if !newn.half.nil? && newn.half < 1e-20
+					d = newn.decay_to
+					self.proc_decay(d, newt)
+					self.delete_nuke(fk)
+				else
+					self.addnuke(newn, true)
+					self.delete_nuke(fk)
+				end
+			end
 		end
 		
-		def do_flux(flux, dt, steps, newt)
+		def do_flux(flux, steps, newt)
 			fperc = {}
 			flux.each {|fk,fv| fperc[fk] = fv.to_f / steps}
 			fperc.keys.each do |fk|
-				if rand <= fperc[v] 
+				if rand <= fperc[fk] 
 					oldn = nil; nukep = nil;
 					loop do
 						nukep = rand(self.tank.size)
@@ -506,6 +538,10 @@ module NukeCooker
 						break if oldn.name != :n
 					end
 					newn = Nuke.new(@env, nil,  newt, oldn.n + @env.nukes[fk][:n], oldn.p + @env.nukes[fk][:p])
+					#
+					netbe = bediff([oldn], [newn])  # add net energy to kinetic E pool
+					self.heat += (netbe * 1000.0)
+					#
 					self.tank.delete_at(nukep)
 					 # if halflife is less than 1e-20, break down again
 					if !newn.half.nil? && newn.half < 1e-20
@@ -535,8 +571,10 @@ module NukeCooker
 			dres.each do |n|
 				if n == :DELE
 					self.zerocharge(1)
+					self.heat -= 1000.0  # annihilation and radiation
 				elsif n == :GAMMA
-					# do something with gammas
+					# do something with gammas; radiate away some heat ferinstance
+					self.heat -= 1000.0  
 				else
 					n.lasttime = newt
 					self.addnuke(n, true)
@@ -552,9 +590,8 @@ module NukeCooker
 				decd = self.tank[pickx]
 				if decd.breakdown?(newt)
 					decayres = decd.decay_to
-					netbe = bediff([decd], decayres)
-						 # but don't have anything to do with the excess E yet...
-						 
+					netbe = bediff([decd], decayres)  # add net energy to kinetic E pool
+					self.heat += (netbe * 1000.0)
 					self.tank.delete_at(pickx)
 					self.proc_decay(decayres, newt)
 				else

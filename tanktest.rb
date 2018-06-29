@@ -8,12 +8,15 @@ include NukeCooker
 e = NukeEnv.new('./data/nuclides.csv')
 t = NukeTank.new(e, 10000)
 
-dt = 1.0
-ts = 1500
-flux = {n: 50, H: 5, D: 2, He3: 1, He4: 2}
+dt = 10.0
+ts = 150
+flux = {n: 10}
+frate = 10.0
+
+fcnt = 0
 
 loop do
-	newt = t.cook(ts, dt, flux)
+	newt = t.cook(ts, dt, flux, frate)
 	specnt = t.tank.inject(Hash.new(0)) {|h, n| h[n.name] += 1; h}
 	speck = specnt.keys.sort do |a,b| 
 		begin 
@@ -30,8 +33,16 @@ loop do
 	end
 	puts "-------------------------------------------------------------"
 	puts "TOTAL TIME: #{t.stopt.round(6)} COUNT: #{t.tank.size}  ELECTRONS: #{t.elec}"
+	puts "MASS: #{t.mass}  TEMP:#{t.temp.round(3)}"
 	puts "-------------------------------------------------------------"
-	dummy = gets.chomp
+	if fcnt <= 0
+		dummy = gets.chomp
+		fcnt = 0
+	else
+		dummy = ""
+		puts "Free run: #{fcnt}"
+		fcnt -= 1
+	end
 
 	if dummy =~ /dump/
 		puts "-----------------------------------------------------"
@@ -39,6 +50,9 @@ loop do
 			puts n.to_s	
 		end
 		gets
+	elsif dummy =~ /free\s+(\d+)/
+		fcnt = $1.to_i
+		puts "Free run mode, #{fcnt} rounds.."
 	elsif dummy =~ /dt\s+(\d+(\.\d+)?)/
 		dt = $1.to_f
 		puts "New dt: #{dt}"
@@ -48,15 +62,35 @@ loop do
 		puts "New steps: #{ts}"
 		gets
 	elsif dummy =~ /show\s*/
-		print "steps: #{ts}  dt: #{dt}  Current flux: "
+		print "steps: #{ts}  dt: #{dt}  fuserate: #{frate}   Current flux: "
 		flux.each do |k,v|
 			print "#{k}:#{v} "
 		end
 		puts
-		gets	
+		gets
+	elsif dummy =~ /fuse\s+(\d+(\.\d+)?)/	
+		frate = $1.to_f
+		puts "New dt: #{frate}"
+		gets
 	elsif dummy =~ /flux nil/
 		flux = {}
 		puts "Flux is zero"
+		gets
+	elsif dummy =~ /hist/
+		prott = 0
+		prots = t.tank.inject(Hash.new(0)) {|h, n| h[n.p] += 1; prott = h[n.p] if prott < h[n.p]; h}
+		40.downto(1) do |li|
+			1.upto(77) do |pn|
+				p = 40.0 * prots[pn] / prott.to_f
+				p = 1.0 if (p < 1.0 and prots[pn] > 0)
+				print (p.to_i >= li ? "X" : " ")
+			end
+			print "\n"
+		end
+		puts "-" * 77
+		1.upto(77) {|pn| print (pn % 10).to_s}
+		puts
+		puts "-" * 77
 		gets
 	elsif dummy =~ /flux((\s+(\w+:\d+))+)/
 		y = $1.strip.split
