@@ -238,7 +238,7 @@ module NukeCooker
 		end
 		
 		def to_s
-			self.half.nil? ? "" : sprintf("%5.2e", self.half)
+			hstr = self.half.nil? ? "" : sprintf("%5.2e", self.half)
 			"#{self.name} P#{self.p} N#{self.n} HALF: #{hstr} T:#{self.lasttime}"
 		end
 		
@@ -289,14 +289,14 @@ module NukeCooker
 						res << Nuke.new(@env, nil, self.lasttime, self.n + 1, self.p - 1)
 					when 'b-n'
 						res << Nuke.new(@env, :n, self.lasttime)
-						res << :DELE
+						res << Nuke.new(@env, :e, self.lasttime)
 						res << Nuke.new(@env, nil, self.lasttime, self.n - 2, self.p + 1)
 					when 'a'
 						res << Nuke.new(@env, :He4, self.lasttime)
 						res << Nuke.new(@env, nil, self.lasttime, self.n - 2, self.p - 2)
 					when 'b-a'
 						res << Nuke.new(@env, :He4, self.lasttime)
-						res << :DELE
+						res << Nuke.new(@env, :e, self.lasttime)
 						res << Nuke.new(@env, nil, self.lasttime, self.n - 3, self.p - 1)
 					when 'sf'
 						res << Nuke.new(@env, SFSPEC.sample, self.lasttime)
@@ -313,12 +313,12 @@ module NukeCooker
 						res << Nuke.new(@env, nil, self.lasttime, self.n, self.p - 2)
 					when 'b-p'
 						res << Nuke.new(@env, :H, self.lasttime)
-						res << :DELE
+						res << Nuke.new(@env, :e, self.lasttime)
 						res << Nuke.new(@env, nil, self.lasttime, self.n - 1, self.p)
 					when 'b-2p'
 						res << Nuke.new(@env, :H, self.lasttime)
 						res << Nuke.new(@env, :H, self.lasttime)
-						res << :DELE
+						res << Nuke.new(@env, :e, self.lasttime)
 						res << Nuke.new(@env, nil, self.lasttime, self.n - 1, self.p - 1)					
 					when 'ec+b+'  # assuming is the same as 'ec'
 						res << :DELE
@@ -328,7 +328,7 @@ module NukeCooker
 						res << Nuke.new(@env, :H, self.lasttime)
 						res << :DELE
 						res << :GAMMA
-						res << Nuke.new(@env, nil, self.lasttime, self.n + 1, self.p)
+						res << Nuke.new(@env, nil, self.lasttime, self.n + 1, self.p - 2)
 					when '2n'
 						res << Nuke.new(@env, :n, self.lasttime)
 						res << Nuke.new(@env, :n, self.lasttime)
@@ -346,7 +346,7 @@ module NukeCooker
 						res << Nuke.new(@env, :H, self.lasttime)
 						res << :DELE
 						res << :GAMMA
-						res << Nuke.new(@env, nil, self.lasttime, self.n + 1, self.p - 1)
+						res << Nuke.new(@env, nil, self.lasttime, self.n + 1, self.p - 3)
 					when 'ec2p'
 						res << Nuke.new(@env, :H, self.lasttime)
 						res << Nuke.new(@env, :H, self.lasttime)
@@ -364,12 +364,12 @@ module NukeCooker
 						res << Nuke.new(@env, :n, self.lasttime)
 						res << Nuke.new(@env, :n, self.lasttime)
 						res << Nuke.new(@env, :n, self.lasttime)
-						res << :DELE
+						res << Nuke.new(@env, :e, self.lasttime)
 						res << Nuke.new(@env, nil, self.lasttime, self.n - 4, self.p + 1)
 					when 'b-2n'
 						res << Nuke.new(@env, :n, self.lasttime)
 						res << Nuke.new(@env, :n, self.lasttime)
-						res << :DELE
+						res << Nuke.new(@env, :e, self.lasttime)
 						res << Nuke.new(@env, nil, self.lasttime, self.n - 3, self.p + 1)
 					when '2ec'
 						res << :DELE; res << :DELE
@@ -377,22 +377,22 @@ module NukeCooker
 					when 'ecsf'
 						res << :DELE
 						res << Nuke.new(@env, SFSPEC.sample, self.lasttime)
-						res << Nuke.new(@env, nil, self.lasttime, self.n - 1 - res[-1].n, self.p + 1 - res[-1].p)
+						res << Nuke.new(@env, nil, self.lasttime, self.n + 1 - res[-1].n, self.p - 1 - res[-1].p)
 					when '14c'
 						res << Nuke.new(@env, :C14, self.lasttime)
-						res << Nuke.new(@env, nil, self.lasttime, self.n - 1 - res[-1].n, self.p + 1 - res[-1].p)
+						res << Nuke.new(@env, nil, self.lasttime, self.n - res[-1].n, self.p - res[-1].p)
 					when '24ne'
 					  res << Nuke.new(@env, :Ne24, self.lasttime)
-						res << Nuke.new(@env, nil, self.lasttime, self.n - 1 - res[-1].n, self.p + 1 - res[-1].p)
+						res << Nuke.new(@env, nil, self.lasttime, self.n - res[-1].n, self.p - res[-1].p)
 					when '22ne'
 						res << Nuke.new(@env, :Ne22, self.lasttime)
-						res << Nuke.new(@env, nil, self.lasttime, self.n - 1 - res[-1].n, self.p + 1 - res[-1].p)
+						res << Nuke.new(@env, nil, self.lasttime, self.n - res[-1].n, self.p - res[-1].p)
 					when '28mg'
 						res << Nuke.new(@env, :Mg28, self.lasttime)
-						res << Nuke.new(@env, nil, self.lasttime, self.n - 1 - res[-1].n, self.p + 1 - res[-1].p)
+						res << Nuke.new(@env, nil, self.lasttime, self.n - res[-1].n, self.p - res[-1].p)
 					when '34si'
 						res << Nuke.new(@env, :Si34, self.lasttime)
-						res << Nuke.new(@env, nil, self.lasttime, self.n - 1 - res[-1].n, self.p + 1 - res[-1].p)				
+						res << Nuke.new(@env, nil, self.lasttime, self.n - res[-1].n, self.p - res[-1].p)				
 				end
 			end
 			return res
@@ -497,7 +497,7 @@ module NukeCooker
 		end
 	
 		def upd(dt)
-			self.get_decayed(dt)
+			self.do_decays(dt)
 	
 			self.stopt += dt
 		end
@@ -506,7 +506,7 @@ module NukeCooker
 			dtt = dt / steps
 			# check for decays
 			0.upto(steps - 1) do |s|			
-				x = get_decayed(self.stopt + dtt * s)													  # decays
+				x = do_decays(self.stopt + dtt * s)													  # decays
 				do_flux(flux, steps, self.stopt + dtt * s) unless flux.nil?     # particle fluxes (p and n)
 				do_fusion(frate, steps, self.stopt + dtt * s) unless frate.nil? # fusion. need to adjust frate w/temperature...
 			end
@@ -542,6 +542,8 @@ module NukeCooker
 		
 		def do_flux(flux, steps, newt)
 			fperc = {}
+			delx = nil
+			newn = nil
 			flux.each {|fk,fv| fperc[fk] = fv.to_f / steps}
 			fperc.keys.each do |fk|
 				if rand <= fperc[fk] 
@@ -561,11 +563,14 @@ module NukeCooker
 					if !newn.half.nil? && newn.half < 1e-20
 						d = newn.decay_to
 						self.proc_decay(d, newt)
-						self.delete_nuke(fk)
+						delx = self.delete_nuke(fk)
 					else
 						self.addnuke(newn, true)
-						self.delete_nuke(fk)
-					end		
+						delx = self.delete_nuke(fk)
+					end	
+					if delx.nil?  # still have extra stuff in the tank, so remove the equiv. heat
+						netbe -= 938e6 * ( @env.nukes[fk][:n] + @env.nukes[fk][:p] )
+					end
 				end
 			end
 		end
@@ -596,7 +601,7 @@ module NukeCooker
 			end	
 		end
 	
-		def get_decayed(newt)
+		def do_decays(newt)
 			decd = nil
 			radn = 0.upto(self.tank.size-1).inject([]) {|a, ex| a << ex unless self.tank[ex].half.nil?; a}
 			if radn.size > 0

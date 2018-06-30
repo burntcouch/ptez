@@ -6,12 +6,12 @@ require './nukecook.rb'
 include NukeCooker
 
 e = NukeEnv.new('./data/nuclides.csv')
-t = NukeTank.new(e, 50000)
+t = NukeTank.new(e, 5000)
 
-dt = 360.0
-ts = 100
-flux = {n: 0.02}
-frate = 100.0
+dt = 100.0
+ts = 150
+flux = {n: 0.1}
+frate = 0.1
 
 fcnt = 0
 
