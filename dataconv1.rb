@@ -31,7 +31,7 @@ nuke.keys.each do |nk|
 		nuke[nk][:xn] = 0.0
 	end
 end
-
+ 
 nuke.each do |k,v|
 	puts "#{k} #{v[:n]}/#{v[:p]} XN: #{v[:xn]}"
 end

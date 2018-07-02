@@ -79,7 +79,36 @@ module NukeCooker
 
 	NUKEINIT = {H: 0.9, D: 0.01, He3: 0.001, He4: 0.088, Li6: 0.00004, Li7: 0.00095, Be9: 0.00001}
 
-	def load_nukes(fn)
+	def load_xn(file, nuke)
+		xsecs = {}
+
+		File.open(file).each do |fline|
+			z = fline.chomp.strip.split(',')
+			unless z.nil?
+				xsecs[z[0].strip] = z[1].to_f
+			end
+		end
+
+		nuke.keys.each do |nk|
+			z = nk.to_s.match(/([A-Z][a-z]?)(\d+)/)
+			unless z.nil?
+				e = z[1]
+				w = z[2]
+				xkey = "#{w}#{e}"
+				if xsecs[xkey].nil?
+					nuke[nk][:xn] = 0.5 + ((nuke[nk][:n] + nuke[nk][:p]) / 50.0).round(1)
+				else
+					nuke[nk][:xn] = xsecs[xkey]
+				end
+			else	
+				nuke[nk][:xn] = 0.0
+			end
+		end
+	
+	end
+
+
+	def load_nukes(fn, xfn=nil)
 		nukes = { 
 			e: {n: 0, p: 0, be: 0.45, half: nil},
 			n: {n: 1, p: 0, be: 800.0, half: 881.5, decay: ['b-', 0.782, :H]}, 
@@ -147,6 +176,8 @@ module NukeCooker
 		else
 			nukes = NUKES
 		end
+		load_xn(xfn, nukes)
+		
 		return nukes
 	end
 	
@@ -213,8 +244,8 @@ module NukeCooker
 	class NukeEnv
 		attr_accessor :nukes
 		
-		def initialize(nukefile)
-			@nukes = load_nukes(nukefile)
+		def initialize(nukefile, xnfile)
+			@nukes = load_nukes(nukefile, xnfile)
 		end
 	
 	end
@@ -526,7 +557,7 @@ module NukeCooker
 			baserate = 1.0 / (n1.p * n1.p * n2.p * n2.p)  # coulomb force goes up as square of charge
 			baserete = baserate * frate / steps
 			newn = Nuke.new(@env, nil,  newt,n1.n + n2.n, n1.p + n2.p)
-			netbe = bediff([n1, n2], [newn])
+			netbe = bediff([newn], [n1, n2])
 			if rand < baserate && netbe > 0.0
 				self.heat += (netbe * 1000.0)
 				self.tank.delete_at(nuke1)
