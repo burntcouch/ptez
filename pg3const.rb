@@ -53,9 +53,9 @@ SPECIES = {
 		},
 	ICE: {methane: [:CH4, 16, 470] , water: [:H2O, 18, 1000 ] , ammonia: [:NH3, 17, 820], 
 		carbon_dioxide: [:CO2, 44, 1560 ], hydogen_sulfide: [:H2S, 34, 1363], sulfur_dioxide: [:SO2, 64, 2629],
-		carbon_monoxide: [:CO, 28, 1250], nitrogen_dioxide: [:NO2, 30, 1300], si_carbide: [:SiC, 40, 3160],
+		carbon_monoxide: [:CO, 28, 1250], nitrogen_dioxide: [:NO2, 30, 1300], 
 		salt: [:NaCl, 58, 2165], cyanide: [:HCN, 27, 1000], phosphine: [:PH3, 34, 1379], p_trichloride: [:PCl3, 136, 1574],
-		p_o_methane: [:POCH3, 62, 1000], graphite: [:C6, 72, 2200], silca: [:SiO2, 60, 2600], k_salt: [:KCl, 73, 1984]
+		p_o_methane: [:POCH3, 62, 1000], graphite: [:C6, 72, 2200], silca: [:Si2O4, 120, 2600], k_salt: [:KCl, 73, 1984]
 		},
 	WET: {apatite: [:Ca5P3O12Cl, 510, 3200], alk_apatite: [:KNaCa4P3O12Cl, 500, 3200], barite: [:BaSO4, 234, 4480],
 		sodium_carbonate: [:Na2CO3, 106, 2540], k_carbonate: [:Na2CO3, 121, 2540], anglesite: [:PbSO4, 308, 6300],
@@ -70,7 +70,7 @@ SPECIES = {
 	DRY: {orthoclase: [:KAlSi3O8, 287, 2650], sulfur: [:S8, 256, 2000], kerogen: [:C6H9O2N, 110, 1500],
 		spinel: [:Mg2AlO4, 139, 3000],  anorthite: [:CaAl2Si2O8, 250, 2650], albite: [:NaAlSi3O8, 245, 2650],
 		ba_feldspar: [:BaAl2Si2O8, 386, 3000], re_feldspar: [:EuAl2Si2O8, 401, 3000], corundum: [:Al2O3, 102, 4000],
-		jadeite: [:NaAlSi2O6, 202, 3400],  diamond: [:C20, 240, 3530], silca: [:SiO2, 60, 2600],
+		jadeite: [:NaAlSi2O6, 202, 3400],  diamond: [:C20, 240, 3530], silca: [:Si2O4, 120, 2600],
 		mg_pyroxene: [:MgSiO3, 100, 3600],  forsterite: [:Mg2SiO4, 140, 3600], s_kerogen: [:C20H30O4N2S, 400, 1500],
 		p_kerogen: [:C24H36O5N2P, 500, 1500]
 		},
@@ -97,11 +97,11 @@ SPECIES = {
 
 VOLATILITY = [[:H], [:N], [:C, :O], [:S, :P, :Cl], [:Na, :K], [:Ba, :Sn, :Zn, :Cu, :Pb]]
 
-def vol_deplete(dist, vclass, dlim=10.4, dscale=2.0)
-	return vclass.to_f - (log(dlim / dist.to_f) / log(dscale))
+def vol_deplete(dist, vclass, dlim=21.0, dscale=1.6)
+	return vclass.to_f - (Math::log(dlim / dist.to_f) / Math::log(dscale))
 end
 
-def vdef_filter(dist, dlim=10.4, dscale=2.0)
+def vdef_filter(dist, dlim=21.0, dscale=1.6)
 	vf = {}
 	VOLATILITY.each_with_index do |e, ex|
 		d = vol_deplete(dist, ex, dlim, dscale)
