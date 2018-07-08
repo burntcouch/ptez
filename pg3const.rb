@@ -42,7 +42,7 @@ ELEMENTS = {H: [1, 1, 10.446], C: [6, 12, 7.004] , O: [8, 16, 7.377] , N: [7, 14
 	Eu: [63, 153, 0.641], Cu: [29, 63, 2.763], Sn: [50, 119, 0.582], Ca: [20, 40, 4.786], 
 	K: [13, 28, 3.591], Mg: [15, 29, 6.031] , Al: [13, 27, 4.929], Cl: [17, 35 , 3.785],
 	Ti: [22, 48, 3.442], Cr: [24, 52, 4.130], Zn: [30, 66, 3.155], Zr: [50, 92, 1.30],  
-	W: [74, 184, -0.469], Nb: [41, 93, -0.143], Pt: [78, 196, 0.9], Ba: [56, 138, 0.652],
+	W: [74, 184, -0.2], Nb: [41, 93, -0.143], Pt: [78, 196, 0.9], Ba: [56, 138, 0.652],
 	Si: [14, 28, 6.0] , S: [16, 32, 5.712], Fe: [26, 56, 5.954], U: [92, 238, -1.372]}
 
 SPECFLDS = [:FORMULA, :AMU, :DELTA, :THERMO]
@@ -433,6 +433,11 @@ def specpick(env, opts=nil)
  	end
 	x = species(env, :ABD, otype, oelist, oefilter)
 	picklist = x.keys.inject({}) {|h,sk| h[sk] = x[sk][:ABD]; h }
+	return wtpick(picklist)
+end
+
+def specpick_c(env, specx)
+	picklist = specx.keys.inject({}) {|h,sk| h[sk] = specx[sk][:ABD]; h }
 	return wtpick(picklist)
 end
 
