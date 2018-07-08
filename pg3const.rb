@@ -38,49 +38,78 @@ UGRAV = 6.67E-11
 ELEMFLDS = [:NUM, :AMU, :ABD, :OXY, :ION]
 
 ELEMENTS = {H: [1, 1, 10.446], C: [6, 12, 7.004] , O: [8, 16, 7.377] , N: [7, 14, 6.496],
-	Na: [11, 23, 4.759], P: [15, 31, 4.017], Ni: [28, 58, 4.712], Pb: [82, 208, 0.542], 
-	Eu: [63, 153, 0.641], Cu: [29, 63, 2.763], Sn: [50, 119, 0.582], Ca: [20, 40, 4.786], 
-	K: [13, 28, 3.591], Mg: [15, 29, 6.031] , Al: [13, 27, 4.929], Cl: [17, 35 , 3.785],
-	Ti: [22, 48, 3.442], Cr: [24, 52, 4.130], Zn: [30, 66, 3.155], Zr: [50, 92, 1.30],  
-	W: [74, 184, -0.4], Nb: [41, 93, -0.143], Pt: [78, 196, 0.4], Ba: [56, 138, 0.652],
-	Si: [14, 28, 6.0] , S: [16, 32, 5.712], Fe: [26, 56, 5.954], U: [92, 238, -1.372]}
-
+	Na: [11, 23, 4.759], Mg: [12, 24, 6.031], Al: [13, 27, 4.929], Si: [14, 28, 6.0], P: [15, 31, 4.017],   
+	S: [16, 32, 5.712],  Cl: [17, 35 , 3.785], K: [19, 38, 3.591], Ca: [20, 40, 4.786], Ti: [22, 48, 3.442],
+	Cr: [24, 52, 4.130], Fe: [26, 56, 5.954], Ni: [28, 58, 4.712], Cu: [29, 63, 2.763], Zn: [30, 66, 3.155],
+	Zr: [40, 92, 1.30], Nb: [41, 93, -0.143], Sn: [50, 119, 0.582], Ba: [56, 138, 0.652],
+	Eu: [63, 153, 0.641], W: [74, 184, -0.4],  Pt: [78, 196, 0.4], Pb: [82, 208, 0.542], U: [92, 238, -1.372]} 
+	
 SPECFLDS = [:FORMULA, :AMU, :DELTA, :THERMO]
 
-SPECIES = { VOL: {methane: [:CH4, 16, 470] , water: [:H2O, 18, 1000 ] , ammonia: [:NH3, 17, 820], 
+SPECIES = {
+	GAS: {hydrogen: [:H2, 2, 76], nitrogen: [:N2, 28, 808], methane: [:CH4, 16, 470] , water: [:H2O, 18, 1000],
+		ammonia: [:NH3, 17, 820], carbon_monoxide: [:CO, 28, 1250], sulfur_dioxide: [:SO2, 64, 2629],
+		carbon_dioxide: [:CO2, 44, 1560 ], hydogen_sulfide: [:H2S, 34, 1363]
+		},
+	ICE: {methane: [:CH4, 16, 470] , water: [:H2O, 18, 1000 ] , ammonia: [:NH3, 17, 820], 
 		carbon_dioxide: [:CO2, 44, 1560 ], hydogen_sulfide: [:H2S, 34, 1363], sulfur_dioxide: [:SO2, 64, 2629],
 		carbon_monoxide: [:CO, 28, 1250], nitrogen_dioxide: [:NO2, 30, 1300], si_carbide: [:SiC, 40, 3160],
-		salt: [:KCl, 63, 2165], cyanide: [:HCN, 27, 1000], phosphine: [:PH3, 34, 1379], p_trichloride: [:PCl3, 136, 1574],
-		p_o_methane: [:POCH3, 62, 1000], graphite: [:C, 12, 2200], silca: [:SiO2, 60, 2600]
+		salt: [:NaCl, 58, 2165], cyanide: [:HCN, 27, 1000], phosphine: [:PH3, 34, 1379], p_trichloride: [:PCl3, 136, 1574],
+		p_o_methane: [:POCH3, 62, 1000], graphite: [:C6, 72, 2200], silca: [:SiO2, 60, 2600], k_salt: [:KCl, 73, 1984]
 		},
-	LIGHT: {orthoclase: [:KAlSi3O8, 287, 2650], sulfur: [:S, 32, 2000],
+	WET: {apatite: [:Ca5P3O12Cl, 510, 3200], alk_apatite: [:KNaCa4P3O12Cl, 500, 3200], barite: [:BaSO4, 234, 4480],
+		sodium_carbonate: [:Na2CO3, 106, 2540], k_carbonate: [:Na2CO3, 121, 2540], anglesite: [:PbSO4, 308, 6300],
+		calcium_carbonate: [:Ca2CO3, 123, 2540], bauxite: [:Al2TiO6H2, 200, 2500], smithsonite: [:ZnCO3, 126, 4450],
+		serpentine: [:Mg2FeSi2O9H4, 308, 2600], biotite: [:KMg2FeAlSi2O12H2, 400, 3100], muscovite: [:KAl2Si3O12H2, 478, 3100], 
+		kaolinite: [:Al2Si2O9H4, 258, 2350],	hematite: [:Fe2O3, 160, 5260], topaz: [:Al2SiO4ClH, 182, 3550],
+		calcite: [:CaCO3, 100, 2710],	dolomite: [:CaMgC2O6, 172, 2850],	magnesite: [:MgCO3, 84, 3100],
+		na_clay: [:NaAlMgSi4O14H6, 386, 2300], ca_clay: [:CaAlMgSi4O14H6, 400, 2300],	k_clay: [:KAlMgSi4O14H6, 400, 2300],
+		gypsum: [:CaSO4H4O2, 172, 2320],	k_salt: [:KCl, 73, 1984], salt: [:NaCl, 58, 2165], kerogen: [:C6H9O2N, 110, 1500],
+		s_kerogen: [:C20H30O4N2S, 400, 1500], p_kerogen: [:C24H36O5N2P, 500, 1500]
+		},
+	DRY: {orthoclase: [:KAlSi3O8, 287, 2650], sulfur: [:S8, 256, 2000], kerogen: [:C6H9O2N, 110, 1500],
 		spinel: [:Mg2AlO4, 139, 3000],  anorthite: [:CaAl2Si2O8, 250, 2650], albite: [:NaAlSi3O8, 245, 2650],
-		apatite: [:Ca5P3O12Cl, 510, 3200], alk_apatite: [:KNaCa4P3O12Cl, 500, 3200], 
-		ba_feldspar: [:BaAl2Si2O8, 386, 3000], re_feldspar: [:EuAl2Si2O8, 401, 3000], corundum: [:Al2O3, 102,4000],
-		jadeite: [:NaAlSi2O6, 202, 3400],  diamond: [:C, 12, 3530],
-		sodium_carbonate: [:Na2CO3, 106, 2540], k_carbonate: [:Na2CO3, 121, 2540], 
-		calcium_carbonate: [:Ca2CO3, 123, 2540], bauxite: [:Al2TiO6H2, 200, 2500], silca: [:SiO2, 60, 2600],
-		mg_pyroxene: [:MgSiO3, 100, 3600],  forsterite: [:Mg2SiO4, 140, 3600]
+		ba_feldspar: [:BaAl2Si2O8, 386, 3000], re_feldspar: [:EuAl2Si2O8, 401, 3000], corundum: [:Al2O3, 102, 4000],
+		jadeite: [:NaAlSi2O6, 202, 3400],  diamond: [:C20, 240, 3530], silca: [:SiO2, 60, 2600],
+		mg_pyroxene: [:MgSiO3, 100, 3600],  forsterite: [:Mg2SiO4, 140, 3600], s_kerogen: [:C20H30O4N2S, 400, 1500],
+		p_kerogen: [:C24H36O5N2P, 500, 1500]
 		},
-	HEAVY: {chromite: [:FeCr2O4, 172, 4800], perovskite: [:CaTiO3, 136, 5400], cuprite: [:Cu2O, 142, 3900],
+	HEAVY: {chromite: [:FeCr2O4, 172, 4800], perovskite: [:CaTiO3, 136, 5400],
 		nb_gadolinite: [:NbEuFeSi2O10, 578, 4600], gadolinite: [:Eu2FeSi2O10, 578, 4600],
-		rutile: [:TiO2, 80, 4230],  zircon: [:ZrSiO4, 184,4600], barite: [:BaSO4, 234, 4480],  smithsonite: [:ZnCO3, 126,4450],
+		rutile: [:TiO2, 80, 4230],  zircon: [:ZrSiO4, 184,4600], fe_garnet: [:CaFeCrAlSi2O12, 540, 4200], 
 		u_zircon: [:ZrUSi2O8, 514, 4900], re_zircon: [:ZrEuSi2O8, 431, 4800], mg_garnet: [:CaMgCrAlSi2O12, 520, 4000], 
-		fe_garnet: [:CaFeCrAlSi2O12, 540, 4200], anglesite: [:PbSO4, 308, 6300],
-		olivine: [:MgFeSiO4, 172, 3800], garnierite: [:MgNiSiO4, 174, 3800], sphalerite: [:ZnS, 98, 4000], 
+		olivine: [:MgFeSiO4, 172, 3800], garnierite: [:MgNiSiO4, 174, 3800], re_pitchblende: [:UEuSiO2, 350, 11000], 
 		scheelite: [:CaWO4, 288, 6100],  coltan: [:FeNb2O6, 338, 6300], wolframite: [:FeWO4, 304, 7500], 
-		galena: [:PbS, 240, 7000], cassiterite: [:SnO2, 151, 7000], bornite: [:Cu5FeS4, 489, 5015], 
 		fe_pyroxene: [:FeSiO3, 132, 3900],  pitchblende: [:UFeSiO2, 350, 11000], ilmenite: [:FeTiO3, 152, 4790],
-		re_pitchblende: [:UEuSiO2, 350, 11000], stannite: [:Cu2FeSnS4, 429, 4400], chalcosite: [:Cu2S, 158, 5700], 
 		sidero_silicate: [:FeNiPtSi3O6, 500, 9000], nb_rutile: [:NbTiO4, 205, 5000], diopside: [:MgCaSi2O6, 216, 6200],
-		baddeleyite: [:ZrO2, 124, 5700], copper: [:Cu, 63, 8000], zinc: [:Zn, 66, 7140]
+		baddeleyite: [:ZrO2, 124, 5700], barite: [:BaSO4, 234, 4480]
 		},
-	SIDERO: {troilite: [:FeS, 88, 5000 ], iron: [:Fe, 56, 7800], nickel_iron: [:FeNi, 114, 8000],  
-		millerite: [:NiS, 90, 5400], platinum: [:Pt, 196, 21450]
+	CHALCO: {copper: [:Cu3, 189, 8000], zinc: [:Zn4, 264, 7140], galena: [:PbS, 240, 7000], cassiterite: [:SnO2, 151, 7000],
+		bornite: [:Cu5FeS4, 489, 5015], stannite: [:Cu2FeSnS4, 429, 4400], chalcosite: [:Cu2S, 158, 5700],
+		sphalerite: [:ZnS, 98, 4000], anglesite: [:PbSO4, 308, 6300], cuprite: [:Cu2O, 142, 3900],
+		smithsonite: [:ZnCO3, 126,4450], sulfur: [:S8, 256, 2000]
+		},
+	SIDERO: {troilite: [:FeS, 88, 5000 ], iron: [:Fe3, 168, 7800], nickel_iron: [:FeNi, 114, 8000],  
+		millerite: [:NiS, 90, 5400], platinum: [:Pt2, 400, 21450]
+		},
+	METAL: {iron: [:Fe2, 112, 7800], nickel_iron: [:FeNi, 114, 8000], platinum: [:Pt2, 400, 21450]
 		}}
 
-# , mg_pyroxene: [:MgSiO3, 100, 3600], fe_pyroxene: [:FeSiO3, 132, 3900]
-	
+VOLATILITY = [[:H], [:N], [:C, :O], [:S, :P, :Cl], [:Na, :K], [:Ba, :Sn, :Zn, :Cu, :Pb]]
+
+def vol_deplete(dist, vclass, dlim=10.4, dscale=2.0)
+	return vclass.to_f - (log(dlim / dist.to_f) / log(dscale))
+end
+
+def vdef_filter(dist, dlim=10.4, dscale=2.0)
+	vf = {}
+	VOLATILITY.each_with_index do |e, ex|
+		d = vol_deplete(dist, ex, dlim, dscale)
+		e.each {|ei| vf[ei] = d if d < 0.0}
+	end
+	return vf
+end
+
 REACT = [ 
 	{TYPE: "MISC", LEFT: "Fe + S", RIGHT: "FeS", TEMP: 0, PRESS: 0, HEAT: 500},
 	{TYPE: "OXY", LEFT: "(4)Fe + (3)O2", RIGHT: "(2)Fe2O3", HEAT: 500},
