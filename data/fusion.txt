@@ -1,0 +1,74 @@
+# fusion.txt
+# reactants,products,Q,time
+# pp1: 91% of pp chain production - T=1e6
+H+H,D+pos,420,slow
+D+H,He3+gamma,5490,
+He3+He3,He4+H+H,12860,
+# pp2: 8.9%
+He3+He4,Be7+gamma,1584,
+Li7+H,He4+He4,17348,
+# pp3: 0.1%
+Be7+H,He4+He4+pos,18210,
+#
+#CNO1 - T=2e7
+C12+H,N13+gamma,1950,
+# N13 decays..
+C13+H,N14+gamma,7540,
+N14+H,O15+gamma,7350,
+# O15 decays..
+N15+H,C12+He4,4960,
+#CNO2 - T=2e7
+N15+H,O16+gamma,12130,
+O16+H,F17+gamma,600,
+# F17 decays..
+O17+H,N14+He4,1190,
+#CNO3 - T=2e7
+O17+H,F18+gamma,5610,
+O18+H,N15+He4,3980,
+F19+H,O16+He4,8114,
+O18+H,F19+gamma,7994,
+#HCNO - T=2e7
+N13+H,O14+gamma,4630,
+# O14 decays..
+F17+H,Ne18+gamma,3923,
+# Ne18 decays..
+F18+H,O15+He4,2880,
+F18+H,Ne19+gamma,6411,
+# Ne19 decays..
+#
+#triple alpha and alpha reactions - T=3e8->3e9
+He4+He4,Be8,0.0,
+Be8+He4,C12+gamma,7366,
+C12+He4,O16+gamma,7161,
+O16+He4,Ne20+gamma,4730,
+Ne20+He4,Mg24+gamma,9316,
+#carbon burning
+C12+C12,Mg24+gamma,13934,
+C12+C12,Na23+H,2241,
+C12+C12,Ne20+He4,4617,
+C12+C12,Mg23+n,0.0,
+C12+C12,O16+He4+He4,0.0,
+#oxygen burning
+O16+O16,S32+gamma,16542,
+O16+O16,P31+H,7678,
+O16+O16,Si28+He4,9594,
+O16+O16,S31+n,1499,
+O16+O16,Mg24+He4+He4,0.0,
+#silicon burning
+Si28+Si28,Ni56+gamma,10918,
+# Ni56 decays to Fe56
+#
+# other light nuclei reactions
+D+n,T+gamma,6257,
+D+D,T+H,4032,
+Li6+H,He4+He3,4016,
+Li6+D,Li7+H,5020,
+Be9+n,Be10+gamma,6810,
+Be9+D,Be10+p,4585,
+Be9+H,Li6+He4,2132,
+B10+n,Li7+He4,2793,
+B10+H,Be7+He4,1148,
+C12+n,C13+gamma,4948,
+N14+n,C14+H,627,
+N14+n,N15+gamma,10833,
+F19+H,O16+He4,8124,

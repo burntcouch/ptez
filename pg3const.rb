@@ -37,18 +37,49 @@ UGRAV = 6.67E-11
 
 ELEMFLDS = [:NUM, :AMU, :ABD, :OXY, :ION]
 
-ELEMENTS = {H: [1, 1, 10.446], C: [6, 12, 7.004] , O: [8, 16, 7.377] , N: [7, 14, 6.496] , 
-	K: [13, 28, 4.788], Mg: [15, 29, 6.055] , Al: [13, 27, 4.929], Cl: [17, 35 , 3.785 ],
+ELEMENTS = {H: [1, 1, 10.446], C: [6, 12, 7.004] , O: [8, 16, 7.377] , N: [7, 14, 6.496],
+	Na: [11, 23, 4.759], P: [15, 31, 4.017], Ni: [28, 58, 4.712], Pb: [82, 208, 0.542], 
+	Eu: [63, 153, 0.641], Cu: [29, 63, 2.763], Sn: [50, 119, 0.582], Ca: [20, 40, 4.786], 
+	K: [13, 28, 3.591], Mg: [15, 29, 6.031] , Al: [13, 27, 4.929], Cl: [17, 35 , 3.785],
+	Ti: [22, 48, 3.442], Cr: [24, 52, 4.130], Zn: [30, 66, 3.155], Zr: [50, 92, 1.30],  
+	W: [74, 184, -0.469], Nb: [41, 93, -0.143], Pt: [78, 196, 0.9], Ba: [56, 138, 0.652],
 	Si: [14, 28, 6.0] , S: [16, 32, 5.712], Fe: [26, 56, 5.954], U: [92, 238, -1.372]}
 
 SPECFLDS = [:FORMULA, :AMU, :DELTA, :THERMO]
 
 SPECIES = { VOL: {methane: [:CH4, 16, 470] , water: [:H2O, 18, 1000 ] , ammonia: [:NH3, 17, 820 ], 
-		carbon_dioxide: [:CO2, 44, 1560 ], sulfur: [:S, 32, 2000], salt: [:KCl, 63, 2165] },
-	ROCK: {feldspar: [:AlKMgSi3O8, 300, 2650] , olivine: [:MgFeSiO4, 172, 3800], 
-		silca: [:SiO2, 60, 2600] },
-	METAL: {pyrite: [:FeS, 88, 5000 ], iron: [:Fe, 56, 7800], pitchblende: [:UFeSiO2, 350, 11000] } 
-	}
+		si_carbide: [:SiC, 40, 3160],	carbon_dioxide: [:CO2, 44, 1560 ], hydogen_sulfide: [:H2S, 34, 1363], 
+		salt: [:KCl, 63, 2165], cyanide: [:HCN, 27, 1000], phosphine: [:PH3, 34, 1379], p_trichloride: [:PCl3, 136, 1574],
+		p_o_methane: [:POCH3, 62, 1000], sodium_carbonate: [:Na2CO3, 106, 2540], k_carbonate: [:Na2CO3, 121, 2540],
+		calcium_carbonate: [:Ca2CO3, 123, 2540], alk_apatite: [:KNaCa4P3O12Cl, 500, 3200], anglesite: [:PbSO4, 308, 6300],
+		barite: [:BaSO4, 234, 4480], rust: [:FeNiO5, 194, 6000], cuprite: [:Cu2O, 142, 3900], smithsonite: [:ZnCO3, 126,4450],
+		cassiterite: [:SnO2, 151, 7000], uraninite: [:UO4, 302, 9000], bauxite: [:Al2TiO6H2, 200, 2500], 
+		graphite: [:C, 12, 2200]
+		},
+	LITHO: {k_feldspar: [:AlKSi2O8, 259, 2650], mg_feldspar: [:AlMgSi2O8, 245, 2700], sulfur: [:S, 32, 2000],
+		olivine: [:MgFeSiO4, 172, 3800], garnierite: [:MgNiSiO4, 174, 3800], sphalerite: [:ZnS, 98, 4000], 
+		spinel: [:Mg2AlO4, 139, 3000],	silca: [:SiO2, 60, 2600], ilmenite: [:FeTiO3, 152, 4790],
+		rutile: [:TiO2, 80, 4230], nb_rutile: [:NbTiO4, 205, 5000], zircon: [:ZrSiO4, 184,4600], 
+		u_zircon: [:ZrUSi2O8, 514, 4900], re_zircon: [:ZrEuSi2O8, 431, 4800], scheelite: [:CaWO4, 288, 6100],
+		 chromite: [:FeCr2O4, 172, 4800] , mg_garnet: [:CaMgCrAlSi2O12, 520, 4000], fe_garnet: [:CaFeCrAlSi2O12, 540, 4200],
+		 coltan: [:FeNb2O6, 338, 6300], u_coltan: [:FeNbUO6, 470, 6800], wolframite: [:FeWO4, 304, 7500],
+		ca_feldspar: [:AlCaSi2O8, 251, 2650], na_feldspar: [:AlNaSi2O8, 244, 2650], diopside: [:MgCaSi2O6, 216, 6200],
+		apatite: [:Ca5P3O12Cl, 510, 3200], alk_apatite: [:KNaCa4P3O12Cl, 500, 3200], u_gadolinite: [:UEuFeSi2O10, 663, 5000],
+		ba_feldspar: [:AlBaSi2O8, 359, 3000], galena: [:PbS, 240, 7000], cassiterite: [:SnO2, 151, 7000],
+		bornite: [:Cu5FeS4, 489, 5015], re_feldspar: [:AlEuSi2O8, 374, 3000], gadolinite: [:Eu2FeSi2O10, 578, 4600],
+		fe_pyroxene: [:FeSiO3, 132, 3900], mg_pyroxene: [:MgSiO3, 100, 3600], corundum: [:Al2O3, 102,4000],
+		jadeite: [:NaAlSi2O6, 202, 3400], sidero_silicate: [:FeNiPtSi3O6, 500, 9000], baddeleyite: [:ZrO2, 124, 5700],
+		perovskite: [:CaTiO3, 136, 5400], diamond: [:C, 12, 3530]
+		},
+	CHALCO: {pitchblende: [:UFeSiO2, 350, 11000], eu_pitchblende: [:UEuSiO2, 350, 11000], sphalerite: [:ZnS, 98, 4000], 
+		stannite: [:Cu2FeSnS4, 429, 4400], chalcosite: [:Cu2S, 158, 5700], bronze: [:SnCu, 182, 8000], 
+		galena: [:PbS, 240, 7000], tin_lead: [:SnPb, 327, 10000], copper: [:Cu, 63, 8000], zinc: [:Zn, 66, 7140],
+		},
+	SIDERO: {troilite: [:FeS, 88, 5000 ], iron: [:Fe, 56, 7800], nickel_iron: [:FeNi, 114, 8000],  
+		millerite: [:NiS, 90, 5400], platinum: [:Pt, 196, 21450]
+		}}
+
+# , mg_pyroxene: [:MgSiO3, 100, 3600], fe_pyroxene: [:FeSiO3, 132, 3900]
 	
 REACT = [ 
 	{TYPE: "MISC", LEFT: "Fe + S", RIGHT: "FeS", TEMP: 0, PRESS: 0, HEAT: 500},
@@ -387,8 +418,20 @@ def rspec(env, spec)  # converts "(Mg,Fe)2SiO4" to (randomly) "Mg2SiO4" or "FeMg
 	return res
 end
 
-def specpick(env) 
-	x = species(env, :ABD)
+def specpick(env, opts=nil)
+	otype = :ALL; oelist = nil; oefilter = nil
+	if !opts.nil? && opts.is_a?(Hash)
+ 		opts.each do |ok, ov|
+ 			if ok == :types
+ 				otype = ov
+ 			elsif ok == :elist
+ 				oelist = ov
+ 			elsif ok == :efilter
+ 				oefilter = ov
+ 			end
+ 		end
+ 	end
+	x = species(env, :ABD, otype, oelist, oefilter)
 	picklist = x.keys.inject({}) {|h,sk| h[sk] = x[sk][:ABD]; h }
 	return wtpick(picklist)
 end

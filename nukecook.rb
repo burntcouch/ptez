@@ -545,6 +545,10 @@ module NukeCooker
 			self.stopt += dt
 		end
 		
+		def do_spall(srate, steps, newt)
+		
+		end
+		
 		def do_fusion(frate, steps, newt)
 			# pick2
 			nuke1 = rand(self.tank.size)
