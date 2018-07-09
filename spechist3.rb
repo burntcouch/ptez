@@ -67,7 +67,7 @@ puts "dist AU:"
 dau = gets.chomp.to_f
 ef = vdef_filter(dau)
 
-mdist = C_METEORITE
+mdist = S_METEORITE
 spabd = species(e, :ABD, [:ICE, :DRY, :HEAVY, :CHALCO, :SIDERO, :METAL], nil,  ef)
 #spabd = mdist.keys.inject({}) {|h, x| h[x] = species(e, :ABD, [x], nil,  ef); h}
 
